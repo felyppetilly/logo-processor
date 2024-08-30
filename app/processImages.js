@@ -1,15 +1,13 @@
 const sharp = require('sharp');
 const xlsx = require('xlsx');
 const axios = require('axios');
-const fs = require('fs');
 const path = require('path');
 const https = require('https');
-
 
 // Ignorar certificados autoassinados
 const agent = new https.Agent({  
     rejectUnauthorized: false
-  });
+});
 
 // Caminho da planilha
 const workbook = xlsx.readFile('links_logos.xlsx');
@@ -24,7 +22,7 @@ const imageUrls = xlsx.utils.sheet_to_json(worksheet, { header: 1 })
 // Pasta de saída
 const outputFolder = 'output/logos';
 
-// Função para baixar, converter e redimensionar imagens
+// Função para baixar, converter e redimensionar imagens com fundo branco
 async function processImage(url, outputFolder) {
     try {
         // Nome do arquivo baseado na URL
@@ -34,13 +32,15 @@ async function processImage(url, outputFolder) {
         // Download da imagem
         const response = await axios({
             url,
-            responseType: 'arraybuffer'
+            responseType: 'arraybuffer',
+            httpsAgent: agent  // Adiciona o agente para ignorar certificados autoassinados
         });
         const buffer = Buffer.from(response.data, 'binary');
 
-        // Processamento da imagem
+        // Processamento da imagem com fundo branco
         await sharp(buffer)
             .resize(140, 140)
+            .flatten({ background: { r: 255, g: 255, b: 255 } })  // Adiciona o fundo branco
             .toFormat('png')
             .toFile(outputFilePath);
 
